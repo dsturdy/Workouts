@@ -448,7 +448,14 @@ else:
     st.warning("💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — use Download, or configure Supabase in Secrets.")
 
 if USE_SUPABASE:
-    st.info("🔗 Cloud storage is ON (Supabase). Logs persist & sync across devices. Add to Streamlit **Secrets**:\n• SUPABASE_URL = https://YOUR-project.supabase.co\n• SUPABASE_KEY = YOUR-ANON-KEY\n\nSQL schema (run once in Supabase):\n```sql
+    st.info("""🔗 Cloud storage is ON (Supabase). Logs persist & sync across devices.
+
+Add to Streamlit **Secrets**:
+• SUPABASE_URL = https://YOUR-project.supabase.co
+• SUPABASE_KEY = YOUR-ANON-KEY
+
+SQL schema (run once in Supabase):
+```sql
 create table if not exists workout_log (
   id bigserial primary key,
   date text,
@@ -465,13 +472,14 @@ create table if not exists workout_log (
   volume float8,
   xp int
 );
+
 create table if not exists xp_log (
   id bigserial primary key,
   date text,
   task text,
   xp int
 );
-```")
+""")
 else:
     st.warning("💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — use Download, or configure Supabase in Secrets.")
 
