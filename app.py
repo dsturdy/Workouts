@@ -447,16 +447,19 @@ create table if not exists xp_log (
 else:
     st.warning("💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — use Download, or configure Supabase in Secrets.")
 
-if USE_SUPABASE:
-    st.info("""🔗 Cloud storage is ON (Supabase). Logs persist & sync across devices.
+# ──────────────────────────────────────────────────────────────
+# CLOUD STORAGE INFO / FOOTER  (no backticks inside strings)
+# ──────────────────────────────────────────────────────────────
 
-Add to Streamlit **Secrets**:
-• SUPABASE_URL = https://YOUR-project.supabase.co
-• SUPABASE_KEY = YOUR-ANON-KEY
+INFO_TEXT = (
+    "🔗 Cloud storage is ON (Supabase). Logs persist & sync across devices.\n\n"
+    "Add to Streamlit **Secrets**:\n"
+    "• SUPABASE_URL = https://YOUR-project.supabase.co\n"
+    "• SUPABASE_KEY = YOUR-ANON-KEY\n\n"
+    "SQL schema (run once in Supabase) is shown below:"
+)
 
-SQL schema (run once in Supabase):
-
-```sql
+SQL_SCHEMA = """
 create table if not exists workout_log (
   id bigserial primary key,
   date text,
@@ -480,10 +483,18 @@ create table if not exists xp_log (
   task text,
   xp int
 );
-""")
+"""
 
+if USE_SUPABASE:
+    st.info(INFO_TEXT)
+    st.code(SQL_SCHEMA, language="sql")
 else:
-st.warning(””“💾 Using local CSV files (no cloud).
-On Streamlit Cloud these may reset — use Download,
-or configure Supabase in Secrets to enable cloud sync.”””)
+    st.warning(
+        "💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — "
+        "use Download, or configure Supabase in Secrets to enable cloud sync."
+    )
+
+st.caption(
+    "Built for Dylan • PPL A/B • Core 3–4×/wk • Erectors 2×/wk • Grip integrated • XP system inspired by your Piano Tracker."
+)
 
