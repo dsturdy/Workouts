@@ -5,8 +5,22 @@ import os
 import base64
 from typing import List, Dict, Tuple
 
+# Optional: Supabase for cloud persistence (auto if secrets exist)
+try:
+    from supabase import create_client, Client  # pip install supabase
+except Exception:
+    create_client = None
+    Client = None
+
+# Optional: Supabase for cloud persistence (auto if secrets exist)
+try:
+    from supabase import create_client, Client  # pip install supabase
+except Exception:
+    create_client = None
+    Client = None
+
 # ──────────────────────────────────────────────────────────────
-# CONFIG & THEME
+# CONFIG & THEME (+ optional Supabase cloud storage) (+ optional Supabase cloud storage)
 # ──────────────────────────────────────────────────────────────
 st.set_page_config(page_title="🏋️ Training Adventure", page_icon="💪", layout="wide")
 LOG_FILE = "workout_log.csv"            # per-set/per-task log
@@ -135,7 +149,7 @@ st.markdown("""
 st.markdown("<div class='big-title'>💪 Training Adventure</div>", unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────────────────────
-# DATA IO
+# DATA IO  (Supabase if configured; else CSV)  (Supabase if configured; else CSV)
 # ──────────────────────────────────────────────────────────────
 DEFAULT_LOG_COLUMNS = [
     "date","week","day_name","exercise","set_number","reps","weight","rir","tempo","notes","est_1rm","volume","xp"
@@ -154,6 +168,40 @@ def load_csv(path: str, cols: List[str]) -> pd.DataFrame:
 def save_csv(df: pd.DataFrame, path: str):
     df.to_csv(path, index=False)
 
+# --- Supabase helpers ---
+@st.cache_resource(show_spinner=False)
+def supabase_client():
+    url = st.secrets.get("SUPABASE_URL") if hasattr(st, "secrets") else None
+    key = st.secrets.get("SUPABASE_KEY") if hasattr(st, "secrets") else None
+    if 'create_client' in globals() and create_client and url and key:
+        try:
+            return create_client(url, key)
+        except Exception:
+            return None
+    return None
+
+SUPA = supabase_client()
+USE_SUPABASE = SUPA is not None
+WORKOUT_TABLE = "workout_log"
+XP_TABLE = "xp_log"
+
+# --- Supabase helpers ---
+@st.cache_resource(show_spinner=False)
+def supabase_client():
+    url = st.secrets.get("SUPABASE_URL") if hasattr(st, "secrets") else None
+    key = st.secrets.get("SUPABASE_KEY") if hasattr(st, "secrets") else None
+    if 'create_client' in globals() and create_client and url and key:
+        try:
+            return create_client(url, key)
+        except Exception:
+            return None
+    return None
+
+SUPA = supabase_client()
+USE_SUPABASE = SUPA is not None
+WORKOUT_TABLE = "workout_log"
+XP_TABLE = "xp_log"
+
 
 def epley_1rm(reps: float, weight: float) -> float:
     try:
@@ -171,6 +219,12 @@ def todays_week_number() -> int:
 # ──────────────────────────────────────────────────────────────
 
 def total_xp() -> int:
+    if USE_SUPABASE:
+        try:
+            res = SUPA.table(XP_TABLE).select("xp").execute()
+            return int(sum([r.get("xp", 0) for r in (res.data or [])]))
+        except Exception:
+            pass
     df = load_csv(XP_LOG_FILE, ["date","task","xp"])
     return int(df["xp"].sum()) if not df.empty else 0
 
@@ -246,7 +300,7 @@ with plan_cols[1]:
 # ──────────────────────────────────────────────────────────────
 st.markdown("<a name='log'></a>", unsafe_allow_html=True)
 st.header("📝 Log Workout (sets/reps/weight/RIR)")
-log_df = load_csv(LOG_FILE, DEFAULT_LOG_COLUMNS)
+log_df = (pd.DataFrame(SUPA.table(WORKOUT_TABLE).select("*").order("id").execute().data) if USE_SUPABASE else load_csv(LOG_FILE, DEFAULT_LOG_COLUMNS))
 
 log_day = st.selectbox("Training day", all_days, index=all_days.index(sel_day))
 exercises = [x["exercise"] for x in SPLIT[log_day]]
@@ -280,29 +334,49 @@ for s in range(1, num_sets+1):
 
 if st.button("✅ Save Sets"):
     if new_rows:
-        log_df = pd.concat([log_df, pd.DataFrame(new_rows)], ignore_index=True)
-        save_csv(log_df, LOG_FILE)
+        if USE_SUPABASE:
+            try:
+                SUPA.table(WORKOUT_TABLE).insert(new_rows).execute()
+                log_df = pd.DataFrame(SUPA.table(WORKOUT_TABLE).select("*").order("id").execute().data)
+            except Exception as e:
+                st.error(f"Supabase insert failed: {e}")
+        else:
+            log_df = pd.concat([log_df, pd.DataFrame(new_rows)], ignore_index=True)
+            save_csv(log_df, LOG_FILE)
         # award XP total for these sets
         total_award = sum(r["xp"] for r in new_rows)
         award_xp(f"{log_ex} sets", total_award)
-        st.success(f"Saved {len(new_rows)} set(s). Awarded +{total_award} XP.")
+        st.success(f"Saved {len(new_rows)} set(s). Awarded +{total_award} XP.")} set(s). Awarded +{total_award} XP.")
 
 st.subheader("Recent Entries")
 st.dataframe(log_df.tail(20), use_container_width=True)
-if st.button("↩️ Undo Last Entry"):
+cols_dl = st.columns(2)
+with cols_dl[0]:
+    if st.button("↩️ Undo Last Entry"):
+        if not log_df.empty:
+            if USE_SUPABASE and "id" in log_df.columns:
+                try:
+                    last_id = int(log_df.iloc[-1]["id"])  # assumes serial id in Supabase
+                    SUPA.table(WORKOUT_TABLE).delete().eq("id", last_id).execute()
+                    log_df = pd.DataFrame(SUPA.table(WORKOUT_TABLE).select("*").order("id").execute().data)
+                    st.warning("Removed last entry from Supabase.")
+                except Exception as e:
+                    st.error(f"Failed to delete from Supabase: {e}")
+            else:
+                save_csv(log_df.iloc[:-1], LOG_FILE)
+                st.warning("Removed last entry from CSV (XP not auto-removed).")
+        else:
+            st.info("Log is empty.")
+with cols_dl[1]:
     if not log_df.empty:
-        last = log_df.iloc[-1]
-        save_csv(log_df.iloc[:-1], LOG_FILE)
-        st.warning("Removed last entry from workout log (XP not auto-removed).")
-    else:
-        st.info("Log is empty.")
+        st.download_button("⬇️ Download full CSV", data=log_df.to_csv(index=False), file_name="workout_log_export.csv", mime="text/csv")
 
 # ──────────────────────────────────────────────────────────────
 # PROGRESS (charts + PRs + targets)
 # ──────────────────────────────────────────────────────────────
 st.markdown("<a name='progress'></a>", unsafe_allow_html=True)
 st.header("📊 Progress & PRs")
-prog = load_csv(LOG_FILE, DEFAULT_LOG_COLUMNS)
+prog = (pd.DataFrame(SUPA.table(WORKOUT_TABLE).select("*").order("id").execute().data) if USE_SUPABASE else load_csv(LOG_FILE, DEFAULT_LOG_COLUMNS))
 if prog.empty:
     st.info("No data yet — log a session above.")
 else:
@@ -344,5 +418,61 @@ if st.button("⬇️ Export Weekly Template CSV"):
             rows.append({"day":day,"exercise":it["exercise"],"sets":it["sets"],"reps":rep_str,"category":it["category"]})
     pd.DataFrame(rows).to_csv(TEMPLATE_FILE, index=False)
     st.success(f"Saved {TEMPLATE_FILE} in this folder.")
+
+if USE_SUPABASE:
+    st.info("🔗 Cloud storage is ON (Supabase). Logs persist & sync across devices. Add to Streamlit **Secrets**:\n• SUPABASE_URL = https://YOUR-project.supabase.co\n• SUPABASE_KEY = YOUR-ANON-KEY\n\nSQL schema (run once in Supabase):\n```sql
+create table if not exists workout_log (
+  id bigserial primary key,
+  date text,
+  week int,
+  day_name text,
+  exercise text,
+  set_number int,
+  reps int,
+  weight float8,
+  rir float8,
+  tempo text,
+  notes text,
+  est_1rm float8,
+  volume float8,
+  xp int
+);
+create table if not exists xp_log (
+  id bigserial primary key,
+  date text,
+  task text,
+  xp int
+);
+```")
+else:
+    st.warning("💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — use Download, or configure Supabase in Secrets.")
+
+if USE_SUPABASE:
+    st.info("🔗 Cloud storage is ON (Supabase). Logs persist & sync across devices. Add to Streamlit **Secrets**:\n• SUPABASE_URL = https://YOUR-project.supabase.co\n• SUPABASE_KEY = YOUR-ANON-KEY\n\nSQL schema (run once in Supabase):\n```sql
+create table if not exists workout_log (
+  id bigserial primary key,
+  date text,
+  week int,
+  day_name text,
+  exercise text,
+  set_number int,
+  reps int,
+  weight float8,
+  rir float8,
+  tempo text,
+  notes text,
+  est_1rm float8,
+  volume float8,
+  xp int
+);
+create table if not exists xp_log (
+  id bigserial primary key,
+  date text,
+  task text,
+  xp int
+);
+```")
+else:
+    st.warning("💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — use Download, or configure Supabase in Secrets.")
 
 st.caption("Built for Dylan • PPL A/B • Core 3–4×/wk • Erectors 2×/wk • Grip integrated • XP system inspired by your Piano Tracker.")
