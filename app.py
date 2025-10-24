@@ -455,6 +455,7 @@ Add to Streamlit **Secrets**:
 • SUPABASE_KEY = YOUR-ANON-KEY
 
 SQL schema (run once in Supabase):
+
 ```sql
 create table if not exists workout_log (
   id bigserial primary key,
@@ -479,8 +480,10 @@ create table if not exists xp_log (
   task text,
   xp int
 );
-""")
-else:
-    st.warning("💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — use Download, or configure Supabase in Secrets.")
+“””)
 
-st.caption("Built for Dylan • PPL A/B • Core 3–4×/wk • Erectors 2×/wk • Grip integrated • XP system inspired by your Piano Tracker.")
+else:
+st.warning(””“💾 Using local CSV files (no cloud).
+On Streamlit Cloud these may reset — use Download,
+or configure Supabase in Secrets to enable cloud sync.”””)
+
