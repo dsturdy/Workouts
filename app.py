@@ -480,7 +480,7 @@ create table if not exists xp_log (
   task text,
   xp int
 );
-“””)
+""")
 
 else:
 st.warning(””“💾 Using local CSV files (no cloud).
