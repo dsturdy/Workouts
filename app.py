@@ -346,7 +346,7 @@ if st.button("✅ Save Sets"):
         # award XP total for these sets
         total_award = sum(r["xp"] for r in new_rows)
         award_xp(f"{log_ex} sets", total_award)
-        st.success(f"Saved {len(new_rows)} set(s). Awarded +{total_award} XP.")} set(s). Awarded +{total_award} XP.")
+        st.success(f"Saved {len(new_rows)} set(s). Awarded +{total_award} XP.")
 
 st.subheader("Recent Entries")
 st.dataframe(log_df.tail(20), use_container_width=True)
