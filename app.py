@@ -419,34 +419,6 @@ if st.button("⬇️ Export Weekly Template CSV"):
     pd.DataFrame(rows).to_csv(TEMPLATE_FILE, index=False)
     st.success(f"Saved {TEMPLATE_FILE} in this folder.")
 
-if USE_SUPABASE:
-    st.info("🔗 Cloud storage is ON (Supabase). Logs persist & sync across devices. Add to Streamlit **Secrets**:\n• SUPABASE_URL = https://YOUR-project.supabase.co\n• SUPABASE_KEY = YOUR-ANON-KEY\n\nSQL schema (run once in Supabase):\n```sql
-create table if not exists workout_log (
-  id bigserial primary key,
-  date text,
-  week int,
-  day_name text,
-  exercise text,
-  set_number int,
-  reps int,
-  weight float8,
-  rir float8,
-  tempo text,
-  notes text,
-  est_1rm float8,
-  volume float8,
-  xp int
-);
-create table if not exists xp_log (
-  id bigserial primary key,
-  date text,
-  task text,
-  xp int
-);
-```")
-else:
-    st.warning("💾 Using local CSV files (no cloud). On Streamlit Cloud these may reset — use Download, or configure Supabase in Secrets.")
-
 # ──────────────────────────────────────────────────────────────
 # CLOUD STORAGE INFO / FOOTER — bulletproof no-quote version
 # ──────────────────────────────────────────────────────────────
