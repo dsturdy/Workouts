@@ -22,7 +22,7 @@ except Exception:
 # ──────────────────────────────────────────────────────────────
 # CONFIG & THEME (+ optional Supabase cloud storage) (+ optional Supabase cloud storage)
 # ──────────────────────────────────────────────────────────────
-st.set_page_config(page_title="🏋️ Training Adventure", page_icon="💪", layout="wide")
+st.set_page_config(page_title="🏋️ Workout Tracker", page_icon="💪", layout="wide")
 LOG_FILE = "workout_log.csv"            # per-set/per-task log
 XP_LOG_FILE = "xp_log.csv"              # XP gamification log
 TEMPLATE_FILE = "split_template.csv"    # exportable plan
@@ -59,24 +59,30 @@ XP = {
 # `tip` shows a concise cue; `icon` decorates the UI.
 SPLIT: Dict[str, List[Dict]] = {
     "Push A — Chest + Triceps + Core": [
-        {"exercise": "Barbell Bench Press", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🏋️", "tip": "Elbows ~45°, 2–3s eccentric"},
+        {"exercise": "Dumbell Bench Press", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🏋️", "tip": "Elbows ~45°, 2–3s eccentric"},
+        {"exercise": "Cable Fly", "sets": 3, "reps": (8, 12), "category": "isolation", "icon": "🦋", "tip": "Hug a tree, squeeze"},
+        {"exercise": "Incline  Cable Fly", "sets": 3, "reps": (8, 12), "category": "isolation", "icon": "🔥", "tip": "Feel chest during ecentric and concentric"},
         {"exercise": "Incline Dumbbell Press", "sets": 3, "reps": (8, 10), "category": "compound", "icon": "📈", "tip": "Slight arch, deep stretch"},
-        {"exercise": "Machine/Cable Fly", "sets": 3, "reps": (12, 15), "category": "isolation", "icon": "🦋", "tip": "Hug a tree, squeeze"},
+        {"exercise": "Weighted Dips", "sets": 3, "reps": (6, 12), "category": "compound", "icon": "😮‍💨", "tip": "Lean forward for better muscle engagement"},
         {"exercise": "Overhead DB Triceps Extension", "sets": 3, "reps": (10, 12), "category": "isolation", "icon": "🎯", "tip": "Long head stretch"},
         {"exercise": "Seated DB Lateral Raise", "sets": 3, "reps": (15, 20), "category": "isolation", "icon": "🏹", "tip": "Lead with elbows"},
         {"exercise": "Rope Pushdown", "sets": 3, "reps": (12, 15), "category": "isolation", "icon": "🪢", "tip": "Flare rope at bottom"},
         {"exercise": "Weighted Decline Sit-Up", "sets": 3, "reps": (10, 12), "category": "core", "icon": "🧱", "tip": "Ribs to pelvis"},
         {"exercise": "Pallof Press", "sets": 3, "reps": (12, 15), "category": "core", "icon": "🧭", "tip": "Resist rotation"},
     ],
-    "Pull A — Back Thickness + Biceps + Grip": [
-        {"exercise": "Barbell Row / Pendlay", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🛠️", "tip": "Torso ~15°, brace"},
-        {"exercise": "Weighted Pull-Up / Lat Pulldown", "sets": 4, "reps": (8, 10), "category": "compound", "icon": "🧗", "tip": "Drive elbows to hips"},
-        {"exercise": "Chest-Supported Row", "sets": 3, "reps": (10, 12), "category": "compound", "icon": "🧱", "tip": "No momentum"},
-        {"exercise": "Seated Cable Row", "sets": 3, "reps": (10, 12), "category": "compound", "icon": "🎣", "tip": "Pause at chest"},
-        {"exercise": "Barbell Curl", "sets": 3, "reps": (8, 10), "category": "isolation", "icon": "🌀", "tip": "Pin elbows"},
-        {"exercise": "Hammer Curl", "sets": 3, "reps": (10, 12), "category": "isolation", "icon": "🔨", "tip": "Neutral grip"},
-        {"exercise": "Farmer's Carry (steps)", "sets": 3, "reps": None, "duration": 40, "category": "grip", "icon": "🧺", "tip": "Tall, tight ribs"},
+    
+    "Pull A — Width + Posterior + Grip + Lower Back": [
+        {"exercise": "Wide-Grip Pull-Up / Pulldown", "sets": 4, "reps": (6, 10), "category": "compound", "icon": "🦅", "tip": "Drive scapular depression"},
+        {"exercise": "T-Bar / Machine Row", "sets": 4, "reps": (8, 10), "category": "compound", "icon": "⚓", "tip": "Chest up"},
+        {"exercise": "Single-Arm DB Row", "sets": 3, "reps": (10, 12), "category": "unilateral", "icon": "🧲", "tip": "Shoulder square"},
+        {"exercise": "Reverse Fly / Face Pull", "sets": 3, "reps": (15, 20), "category": "isolation", "icon": "🎣", "tip": "ER + scap set"},
+        {"exercise": "Preacher Curl", "sets": 3, "reps": (10, 12), "category": "isolation", "icon": "🧪", "tip": "No shoulder swing"},
+        {"exercise": "Zottman / Reverse Curl", "sets": 3, "reps": (12, 15), "category": "forearms", "icon": "🔁", "tip": "Slow negative"},
+        {"exercise": "Back Extension (weighted)", "sets": 3, "reps": (15, 20), "category": "erectors", "icon": "🧱", "tip": "Neutral spine"},
+        {"exercise": "Plate Pinch Hold (sec)/ Farmer Walks", "sets": 3, "reps": None, "duration": 45, "category": "grip", "icon": "📀", "tip": "Thumbs crush"},
     ],
+    
+   
     "Legs A — Quads + Balance + Core": [
         {"exercise": "Front / Safety Bar Squat", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🧊", "tip": "Upright torso, brace"},
         {"exercise": "Bulgarian Split Squat (supported)", "sets": 3, "reps": (10, 12), "category": "unilateral", "icon": "🦵", "tip": "Use post for balance"},
@@ -89,23 +95,26 @@ SPLIT: Dict[str, List[Dict]] = {
     "Push B — Shoulders + Triceps + Core": [
         {"exercise": "Standing Overhead Press", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "📏", "tip": "Glutes tight, chin back"},
         {"exercise": "Arnold Press", "sets": 3, "reps": (8, 10), "category": "compound", "icon": "🎛️", "tip": "Full ROM"},
-        {"exercise": "DB Lateral Raise (slow ecc)", "sets": 3, "reps": (15, 20), "category": "isolation", "icon": "🌙", "tip": "2–3s down"},
+        {"exercise": "Barbell Front Delts", "sets": 3, "reps": (8, 12), "category": "isolation", "icon": "🛰️", "tip": "Slow, engaged retraction"},
+        {"exercise": "Cable Lateral Raise (slow ecc)", "sets": 3, "reps": (15, 20), "category": "isolation", "icon": "🌙", "tip": "2–3s down"},
         {"exercise": "Machine Chest Press", "sets": 3, "reps": (10, 12), "category": "compound", "icon": "🛡️", "tip": "Neutral grip"},
-        {"exercise": "Cable Lateral Raise (1-arm)", "sets": 3, "reps": (12, 15), "category": "isolation", "icon": "🎯", "tip": "Constant tension"},
+        {"exercise": "Cable Decline Flys", "sets": 3, "reps": (8, 15), "category": "isolation", "icon": "🎃", "tip": "Feel chest engage during reps"},
+        {"exercise": "Face Pull + Extension", "sets": 3, "reps": (12, 15), "category": "isolation", "icon": "🎯", "tip": "Constant tension"},
         {"exercise": "Skullcrusher / Rope Ext.", "sets": 3, "reps": (10, 12), "category": "isolation", "icon": "💥", "tip": "Elbows still"},
         {"exercise": "Cable Woodchop (per side)", "sets": 3, "reps": (12, 12), "category": "core", "icon": "🪓", "tip": "Hips quiet"},
         {"exercise": "Side Plank Hip Raise (sec)", "sets": 3, "reps": None, "duration": 30, "category": "core", "icon": "🧱", "tip": "Ribs down"},
     ],
-    "Pull B — Width + Posterior + Grip + Lower Back": [
-        {"exercise": "Wide-Grip Pull-Up / Pulldown", "sets": 4, "reps": (6, 10), "category": "compound", "icon": "🦅", "tip": "Drive scapular depression"},
-        {"exercise": "T-Bar / Machine Row", "sets": 4, "reps": (8, 10), "category": "compound", "icon": "⚓", "tip": "Chest up"},
-        {"exercise": "Single-Arm DB Row", "sets": 3, "reps": (10, 12), "category": "unilateral", "icon": "🧲", "tip": "Shoulder square"},
-        {"exercise": "Reverse Fly / Face Pull", "sets": 3, "reps": (15, 20), "category": "isolation", "icon": "🎣", "tip": "ER + scap set"},
-        {"exercise": "Preacher Curl", "sets": 3, "reps": (10, 12), "category": "isolation", "icon": "🧪", "tip": "No shoulder swing"},
-        {"exercise": "Zottman / Reverse Curl", "sets": 3, "reps": (12, 15), "category": "forearms", "icon": "🔁", "tip": "Slow negative"},
-        {"exercise": "Back Extension (weighted)", "sets": 3, "reps": (15, 20), "category": "erectors", "icon": "🧱", "tip": "Neutral spine"},
-        {"exercise": "Plate Pinch Hold (sec)", "sets": 3, "reps": None, "duration": 45, "category": "grip", "icon": "📀", "tip": "Thumbs crush"},
+
+     "Pull B — Back Thickness + Biceps + Grip": [
+        {"exercise": "Barbell Row / Pendlay", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🛠️", "tip": "Torso ~15°, brace"},
+        {"exercise": "Weighted Pull-Up / Lat Pulldown", "sets": 4, "reps": (8, 10), "category": "compound", "icon": "🧗", "tip": "Drive elbows to hips"},
+        {"exercise": "Chest-Supported Row", "sets": 3, "reps": (10, 12), "category": "compound", "icon": "🧱", "tip": "Kelso Shrugs after failure"},
+        {"exercise": "Seated Cable Row", "sets": 3, "reps": (10, 12), "category": "compound", "icon": "🎣", "tip": "Pause at chest"},
+        {"exercise": "Barbell Curl", "sets": 3, "reps": (8, 10), "category": "isolation", "icon": "🌀", "tip": "Pin elbows"},
+        {"exercise": "Hammer Curl", "sets": 3, "reps": (10, 12), "category": "isolation", "icon": "🔨", "tip": "Neutral grip"},
+        {"exercise": "Farmer's Carry (steps)", "sets": 3, "reps": None, "duration": 40, "category": "grip", "icon": "🧺", "tip": "Tall, tight ribs"},
     ],
+
     "Legs B — Glutes + Hamstrings + Lower Back + Core": [
         {"exercise": "Romanian Deadlift", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🪵", "tip": "Hinge; shins vertical"},
         {"exercise": "Seated Good Morning", "sets": 3, "reps": (10, 12), "category": "erectors", "icon": "🪑", "tip": "Brace, move hips"},
@@ -113,8 +122,10 @@ SPLIT: Dict[str, List[Dict]] = {
         {"exercise": "Hamstring Curl", "sets": 3, "reps": (10, 15), "category": "isolation", "icon": "🧵", "tip": "Toes neutral"},
         {"exercise": "Weighted Side Plank (sec)", "sets": 3, "reps": None, "duration": 30, "category": "core", "icon": "🧱", "tip": "Hips stacked"},
         {"exercise": "Back Extension / Reverse Hyper", "sets": 3, "reps": (15, 20), "category": "erectors", "icon": "🔁", "tip": "Control end-range"},
-        {"exercise": "Ab Wheel Rollout", "sets": 3, "reps": (10, 15), "category": "core", "icon": "🛞", "tip": "Ribs down"},
+        {"exercise": "Cable Crunch", "sets": 3, "reps": (10, 15), "category": "core", "icon": "🛞", "tip": "Slow concentric movement, avoid pulling with arms"},
         {"exercise": "Suitcase Carry (steps)", "sets": 3, "reps": None, "duration": 40, "category": "core/grip", "icon": "🧳", "tip": "Anti-lean"},
+        {"exercise": "Kettlebell toe-touches", "sets": 3, "reps": (12, 20), "category": "core", "icon": "🍄", "tip": "Engage core to avoid lower back activation"},
+
     ],
 }
 
@@ -146,7 +157,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='big-title'>💪 Training Adventure</div>", unsafe_allow_html=True)
+st.markdown("<div class='big-title'>💪 Workout Tracker</div>", unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────────────────────
 # DATA IO  (Supabase if configured; else CSV)  (Supabase if configured; else CSV)
@@ -469,6 +480,3 @@ else:
         "use Download, or configure Supabase in Secrets to enable cloud sync."
     )
 
-st.caption(
-    "Built for Dylan • PPL A/B • Core 3–4×/wk • Erectors 2×/wk • Grip integrated • XP system inspired by your Piano Tracker."
-)
