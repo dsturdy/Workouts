@@ -116,7 +116,7 @@ SPLIT: Dict[str, List[Dict]] = {
     ],
 
     "Legs B — Glutes + Hamstrings + Lower Back + Core": [
-        {"exercise": "Romanian Deadlift", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🪵", "tip": "Hinge; shins vertical"},
+        {"exercise": "Romanian Deadlift / New Deadlift Machine??", "sets": 4, "reps": (6, 8), "category": "compound", "icon": "🪵", "tip": "Hinge; shins vertical"},
         {"exercise": "Seated Good Morning", "sets": 3, "reps": (10, 12), "category": "erectors", "icon": "🪑", "tip": "Brace, move hips"},
         {"exercise": "Hip Thrust / Glute Bridge", "sets": 3, "reps": (10, 12), "category": "compound", "icon": "🍑", "tip": "Posterior tilt"},
         {"exercise": "Hamstring Curl", "sets": 3, "reps": (10, 15), "category": "isolation", "icon": "🧵", "tip": "Toes neutral"},
